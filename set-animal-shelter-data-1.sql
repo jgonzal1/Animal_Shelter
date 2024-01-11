@@ -2035,22 +2035,23 @@ VALUES ('Dog', 'Max', 'Bella', '1'),
 
 
 -- Source: Wikipedia, not all 'standard' colors included here)
-CREATE TABLE Colors(Color VARCHAR(10) NOT NULL PRIMARY KEY) 
-; INSERT INTO Colors(Color)
-VALUES ('Beige'),
-  ('Black'),
-  ('Blue'),
-  ('Brown'),
-  ('Cinnamon'),
-  ('Cream'),
-  ('Fawn'),
-  ('Ginger'),
-  ('Gold'),
-  ('Gray'),
-  ('Lilach'),
-  ('Opal'),
-  ('Red'),
-  ('White') 
+CREATE TABLE Colors(Color VARCHAR(10) NOT NULL PRIMARY KEY, Idx TINYINT) 
+; INSERT INTO Colors(Color, Idx)
+VALUES
+  ('Beige', 1),
+  ('Black', 2),
+  ('Blue', 3),
+  ('Brown', 4),
+  ('Cinnamon', 5),
+  ('Cream', 6),
+  ('Fawn', 7),
+  ('Ginger', 8),
+  ('Gold', 9),
+  ('Gray', 10),
+  ('Lilach', 11),
+  ('Opal', 12),
+  ('Red', 13),
+  ('White', 14)
 ;
 
 
@@ -2296,10 +2297,6 @@ FROM Common_Animal_Names AS CAN
 CROSS JOIN Genders
 ;
 
-
-
-
-
 -- There are identical names for both M and F
 -- of the same species which we want to avoid
 -- since gender is not part of key
@@ -2321,13 +2318,83 @@ INSERT INTO DeDuped_F_M_Names(
   UN.Name
 ;
 
-CREATE TABLE Animals (
-  Name VARCHAR(20) NOT NULL,
-  Species VARCHAR(10) NOT NULL,
-  Primary_Color VARCHAR(10) NOT NULL,
-  Breed VARCHAR(50) NULL,
-  Gender CHAR(1) NOT NULL,
+DROP TABLE Animals_Color_Ref;
+CREATE TABLE Animals_Color_Ref (
+  Admission_Date DATE NOT NULL,
   Birth_Date DATE NOT NULL,
+  Breed VARCHAR(50) NOT NULL,
+  Color_Ref TINYINT NOT NULL,
+  Gender CHAR(1) NOT NULL,
+  Implant_Chip_ID VARCHAR(4) NOT NULL,
+  Name VARCHAR(20) NOT NULL,
   Pattern VARCHAR(20) NOT NULL,
-  Admission_Date DATE NOT NULL
+  Species VARCHAR(10) NOT NULL
 );
+-- Dogs
+INSERT INTO Animals_Color_Ref (
+  Implant_Chip_ID,
+  Species,
+  Breed,
+  Name,
+  Gender,
+  Birth_Date,
+  Color_Ref,
+  Pattern,
+  Admission_Date
+)
+SELECT (1000 + abs(random() % 8999)) AS Implant_Chip_ID,
+  D.Species,
+  B.Breed,
+  -- Non breeds first
+  D.Name,
+  D.Gender,
+  (cast(2000+abs(random() % 8) as text) || '-' || cast(1+abs(random() % 11) as text) || '-' || cast(1+abs(random() % 27) as text)) AS Birth_Date,
+  (1+abs(random() % 14)) as Color_Ref,
+  P.Pattern,
+  (cast(2009+abs(random() % 12) as text) || '-' || cast(1+abs(random() % 11) as text) || '-' || cast(1+abs(random() % 27) as text)) AS Admission_Date
+FROM DeDuped_F_M_Names AS D
+LEFT JOIN Patterns AS P
+ON P.Species = D.Species
+LEFT JOIN Breeds AS B
+ON B.Species = D.Species
+WHERE D.Species = 'Dog'
+;
+
+DROP TABLE Animals;
+CREATE TABLE Animals (
+  Admission_Date DATE NOT NULL,
+  Birth_Date DATE NOT NULL,
+  Breed VARCHAR(50) NOT NULL,
+  Gender CHAR(1) NOT NULL,
+  Implant_Chip_ID VARCHAR(4) NOT NULL,
+  Name VARCHAR(20) NOT NULL,
+  Pattern VARCHAR(20) NOT NULL,
+  Primary_Color VARCHAR(10) NOT NULL,
+  Species VARCHAR(10) NOT NULL
+);
+INSERT INTO Animals(
+  Admission_Date,
+  Birth_Date,
+  Breed,
+  Gender,
+  Implant_Chip_ID,
+  Name,
+  Pattern,
+  Primary_Color,
+  Species
+) SELECT
+  A.Admission_Date,
+  A.Birth_Date,
+  A.Breed,
+  A.Gender,
+  A.Implant_Chip_ID,
+  A.Name,
+  A.Pattern,
+  C.Color,
+  A.Species
+FROM Animals_Color_Ref AS A
+LEFT JOIN Colors AS C
+ON A.Color_Ref = C.Idx
+;
+SELECT * FROM Animals
+;
