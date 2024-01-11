@@ -1741,7 +1741,7 @@ FROM (
 
 
 
-
+/*
 -- Sources:
 -- https://www.rover.com/blog/dog-names/
 -- https://www.rover.com/blog/best-cat-names/
@@ -2181,14 +2181,12 @@ VALUES ('Rabies', 'Dog'),
   ('Viral Haemorrhagic Disease', 'Rabbit')
 ;
 
-/*
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@ IMPORTANT - Each of my courses uses its own subset of the data and tables from this projcet.               @@
-@@ If you are looking for the practice demo database I use in my courses, follow these links:                 @@
-@@ 1. Query Processing - https://github.com/ami-levin/LinkedIn/tree/master/Query%20Processing/Demo%20Database @@ 
-@@ 2. Window Functions - https://github.com/ami-levin/LinkedIn/tree/master/Window%20Functions/Demo%20Database @@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-*/
+-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+-- @@ IMPORTANT - Each of my courses uses its own subset of the data and tables from this projcet.               @@
+-- @@ If you are looking for the practice demo database I use in my courses, follow these links:                 @@
+-- @@ 1. Query Processing - https://github.com/ami-levin/LinkedIn/tree/master/Query%20Processing/Demo%20Database @@ 
+-- @@ 2. Window Functions - https://github.com/ami-levin/LinkedIn/tree/master/Window%20Functions/Demo%20Database @@
+-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 -- Animal shelter tables and data
 
@@ -2693,7 +2691,7 @@ FROM	Animals AS A
 ORDER BY NEWID()
 OFFSET 0 ROWS FETCH NEXT @Num_Adoptions ROWS ONLY;
 
-/* -- Future optional
+-- Future optional
 -- Animal routine checkups
 CREATE TABLE Routine_Checkups
 (
@@ -2808,7 +2806,7 @@ WHERE	C.Date BETWEEN @Shelter_Open AND @Last_Data_Day
 		C.Date <= ISNULL(AD.Adoption_Date, @Last_Data_Day) -- only pre-adoption
 		AND 
 		ABS(CHECKSUM(A.Name + A.Species + CAST(C.Date AS VARCHAR(20))) % 100) > 74; -- only 1/4 of all possible combinations
-*/
+--
 
 CREATE TABLE Vaccinations
 (
@@ -2995,3 +2993,4 @@ GROUP BY	Adopter_Email;
 --GROUP BY	A.Species;
 
 COMMIT TRANSACTION;
+*/
