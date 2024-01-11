@@ -6,11 +6,6 @@ CREATE TABLE Common_Person_Names(
   Female VARCHAR(20) NOT NULL UNIQUE
 );
 INSERT INTO Common_Person_Names(Rank, Surname, Male, Female)
--- SELECT n.RANK,
---   LEFT(n.Surname, 1) + RIGHT(LOWER(n.Surname), LEN(n.Surname) - 1) AS Surname,
---   LEFT(n.Male, 1) + RIGHT(LOWER(n.Male), LEN(n.Male) - 1) AS Male,
---   LEFT(n.Female, 1) + RIGHT(LOWER(n.Female), LEN(n.Female) - 1) AS Female
--- FROM (
 VALUES (1, 'SMITH', 'MARY', 'JAMES'),
       (2, 'JOHNSON', 'PATRICIA', 'JOHN'),
       (3, 'WILLIAMS', 'LINDA', 'ROBERT'),
