@@ -2151,7 +2151,6 @@ VALUES ('Rabies', 'Dog'),
 -- DECLARE @Shelter_State VARCHAR(20) = 'California';
 -- Shelter state
 -- DECLARE @Shelter_County VARCHAR(20) = 'Los Angeles';
-
 -- Shelter county - cities and addresses will be limited to the same county
 -- DECLARE @Max_Zip_Code CHAR(5) = '91000';
 -- Further limit persons to zip areas below this number
@@ -2196,92 +2195,33 @@ VALUES ('Rabies', 'Dog'),
 
 
 
-
-CREATE TABLE Persons(
-  Email VARCHAR(100) NOT NULL PRIMARY KEY,
-  First_Name VARCHAR(15) NOT NULL,
-  Last_Name VARCHAR(15) NOT NULL,
-  Birth_Date DATE NULL,
-  Address VARCHAR(100) NOT NULL,
-  State VARCHAR(20) NOT NULL,
-  City VARCHAR(30) NOT NULL,
-  Zip_Code CHAR(5) NOT NULL
-) 
-;
-
 CREATE TABLE Genders(Gender VARCHAR(1)) 
 ; INSERT INTO Genders(Gender)
 VALUES ('F'),
   ('M') 
 ;
-
-SELECT CPN.Male AS First_Name,
-  CPN1.Surname AS Last_Name
+CREATE TABLE Persons(
+  Email VARCHAR(100) NOT NULL PRIMARY KEY,
+  First_Name VARCHAR(15) NOT NULL,
+  Last_Name VARCHAR(15) NOT NULL,
+  Birth_Date DATE NULL,
+  Gender VARCHAR(1) NOT NULL
+) 
+;
+INSERT INTO Persons(
+  Email,First_Name,Last_Name,Birth_Date,Gender
+) SELECT 
+  (CASE WHEN Genders.Gender = "M"
+  THEN (CPN.Male || "." || CPN1.Surname || "@gmail.com")
+  ELSE (CPN.Female || "." || CPN1.Surname || "@gmail.com")
+  END) AS Email,
+  CASE WHEN Genders.Gender = "M" THEN CPN.Male ELSE CPN.Female END AS First_Name,
+  CPN1.Surname AS Last_Name,
+  (cast(1900+abs(random() % 123) as text) || '-' || cast(1+abs(random() % 11) as text) || '-' || cast(1+abs(random() % 27) as text)) AS birth_date,
+  Genders.Gender AS Gender
 FROM Common_Person_Names AS CPN
   CROSS JOIN Common_Person_Names AS CPN1
-  CROSS JOIN Genders 
-;
-
-
-
-
-
-WITH All_Possible_Names AS (
-  SELECT CASE
-  Genders.Gender
-  WHEN 'M' THEN CPN.Male
-  ELSE CPN.Female
-  END AS First_Name,
-  CPN1.Surname AS Last_Name
-  FROM Common_Person_Names AS CPN
-  CROSS JOIN Common_Person_Names AS CPN1
   CROSS JOIN Genders
-)
-INSERT INTO Persons(
-  Email,
-  First_Name,
-  Last_Name,
-  Birth_Date,
-  Address,
-  State,
-  City,
-  Zip_Code
-  )
-SELECT LOWER(Random_Names.First_Name) + '.' + LOWER(Random_Names.Last_name) + '@gmail.com' AS Email,
-  Random_Names.First_Name,
-  Random_Names.Last_Name,
-  '1992-01-01' AS Birth_Date,
-  Addresses.Address,
-  'Arizona',
-  Cities.City,
-  Cities.Zip_Code
-FROM (
-  SELECT APN.First_Name,
-  APN.Last_Name
-  FROM All_Possible_Names AS APN
-  ORDER BY NEWID()
-  ) AS Random_Names
-  CROSS APPLY (
-  SELECT CZC.City,
-  CZC.Zip_Code
-  FROM City_Zip_Codes AS CZC
-  INNER JOIN Cities AS C ON C.State = CZC.State
-  AND C.City = CZC.City
-  WHERE C.State = 'Arizona'
-  AND C.County = 'Arizona'
-  AND (
-  CZC.Zip_Code < 9999
-  OR 9999 IS NULL
-  )
-  AND Random_Names.First_Name IS NOT NULL -- Force per row execution
-  ORDER BY NEWID()
-  ) AS Cities(City, Zip_Code)
-  CROSS APPLY (
-  SELECT '1 ' + CSN.Street
-  FROM Common_Street_Names AS CSN
-  WHERE Random_Names.First_Name IS NOT NULL -- Force per row execution
-  ORDER BY NEWID()
-  ) AS Addresses(Address) 
 ;
 
 
@@ -2291,11 +2231,12 @@ FROM (
 -- Staff roles
 CREATE TABLE Staff_Roles (Role VARCHAR(20) NOT NULL PRIMARY KEY) 
 ; INSERT INTO Staff_Roles (Role)
-VALUES ('Receptionist'),
-  ('Veterinarian'),
+VALUES
   ('Assistant'),
+  ('Janitor'),
   ('Manager'),
-  ('Janitor') 
+  ('Receptionist'),
+  ('Veterinarian')
 ;
 
 
@@ -2303,116 +2244,46 @@ VALUES ('Receptionist'),
 
 
 -- Latter will not be assigned, everyone helps clean up
--- Staff
 CREATE TABLE Staff (
-  Email VARCHAR(100) NOT NULL PRIMARY KEY REFERENCES Persons (Email) ON UPDATE CASCADE ON DELETE NO ACTION,
-  Hire_Date DATE NOT NULL
+  Email VARCHAR(100) NOT NULL PRIMARY KEY REFERENCES Persons(Email) ON UPDATE CASCADE ON DELETE NO ACTION,
+  Hire_Date DATE NOT NULL,
+  RandIdx TINYINT
 ) 
-; INSERT INTO Staff (Email, Hire_Date)
-SELECT Email,
-  '2024-01-02'
+; INSERT INTO Staff (Email, Hire_Date, RandIdx)
+SELECT substr(Email, 0, length(Email)-8) || 'animalshelter.com' AS Email,
+  (cast(2000+abs(random() % 23) as text) || '-' || cast(1+abs(random() % 11) as text) || '-' || cast(1+abs(random() % 27) as text)) AS Hire_Date,
+  abs(1 + random() % 5) AS RandIdx
 FROM Persons
-ORDER BY NEWID() OFFSET 0 ROWS FETCH NEXT (200) ROWS ONLY 
 ;
+SELECT * FROM Staff;
 
 
 
 
 
--- Staff use 'animalshelter.com' domain addresses
-UPDATE Persons
-SET Email = LEFT(Email, CHARINDEX('@', Email)) + 'animalshelter.com'
-WHERE Email IN (
-  SELECT Email
-  FROM Staff
-  ) 
-;
-
-
-
-
-
--- Staff roles
 CREATE TABLE Staff_Assignments (
-  Email VARCHAR(100) NOT NULL REFERENCES Staff (Email) ON UPDATE CASCADE ON DELETE NO ACTION,
-  Role VARCHAR(20) NOT NULL REFERENCES Staff_Roles (Role) ON UPDATE CASCADE ON DELETE NO ACTION,
-  Assigned DATE NOT NULL,
+  Email VARCHAR(100) NOT NULL REFERENCES Staff(Email) ON UPDATE CASCADE ON DELETE NO ACTION,
+  Role VARCHAR(20) NOT NULL REFERENCES Staff_Roles(Role) ON UPDATE CASCADE ON DELETE NO ACTION,
+  Assigned DATE NOT NULL REFERENCES Staff(Hire_Date) ON UPDATE CASCADE ON DELETE NO ACTION,
   PRIMARY KEY (Email, Role)
 ) 
-; INSERT INTO Staff_Assignments (Email, Role, Assigned)
+; INSERT INTO Staff_Assignments(Email, Role, Assigned)
 SELECT S.Email,
-  'Veterinarian',
+  CASE
+    WHEN S.RandIdx = 1 THEN 'Assistant'
+    WHEN S.RandIdx = 2 THEN 'Janitor'
+    WHEN S.RandIdx = 3 THEN 'Manager'
+    WHEN S.RandIdx = 4 THEN 'Receptionist'
+    ELSE 'Veterinarian'
+  END,
   S.Hire_Date
 FROM Staff AS S
-ORDER BY NEWID() OFFSET 0 ROWS FETCH NEXT 50 ROWS ONLY 
-; INSERT INTO Staff_Assignments (Email, Role, Assigned)
-SELECT S.Email,
-  'Assistant',
-  S.Hire_Date
-FROM Staff AS S
-WHERE Email NOT IN (
-  SELECT Email
-  FROM Staff_Assignments
-  )
-ORDER BY NEWID() OFFSET 0 ROWS FETCH NEXT (50) ROWS ONLY 
-; INSERT INTO Staff_Assignments (Email, Role, Assigned)
-SELECT S.Email,
-  'Receptionist',
-  S.Hire_Date
-FROM Staff AS S
-WHERE Email NOT IN (
-  SELECT Email
-  FROM Staff_Assignments
-  )
-ORDER BY NEWID() OFFSET 0 ROWS FETCH NEXT (50) ROWS ONLY 
-; INSERT INTO Staff_Assignments (Email, Role, Assigned)
-SELECT S.Email,
-  'Manager',
-  S.Hire_Date
-FROM Staff AS S
-WHERE Email NOT IN (
-  SELECT Email
-  FROM Staff_Assignments
-  )
-ORDER BY NEWID() OFFSET 0 ROWS FETCH NEXT 50 ROWS ONLY 
-;
+; SELECT * FROM Staff_Assignments;
 
 
 
 
 
--- 1 of each role on day 1
-WITH Staff_Rn AS (
-  SELECT *,
-  ROW_NUMBER() OVER(
-  PARTITION BY role
-  ORDER BY Assigned ASC
-  ) AS Rn
-  FROM Staff_Assignments
-)
-UPDATE Staff_Rn
-SET Staff_Rn.Assigned = '2016-01-01'
-WHERE Rn = 1 
-;
-
-
-
-
-
--- update hire dates to match
-UPDATE Staff
-SET Hire_Date = (
-  SELECT Assigned
-  FROM Staff_Assignments AS SA
-  WHERE SA.Email = Staff.Email
-  ) 
-;
-
-
-
-
-
--- Animals
 CREATE TABLE Animals (
   Name VARCHAR(20) NOT NULL,
   Species VARCHAR(10) NOT NULL,
@@ -2420,8 +2291,6 @@ CREATE TABLE Animals (
   CONSTRAINT PK_Animals PRIMARY KEY (Name, Species),
   -- Business rule = unique identification of animal as name + species will do for a small sample set 
   -- probably not enough for a real world scenario but depends on shelter naming conventions
-  Implant_Chip_ID UNIQUEIDENTIFIER NOT NULL UNIQUE,
-  -- This is the 'most natural' key, but it's unfamiliar and not very useful for human communication 
   Breed VARCHAR(50) NULL,
   Gender CHAR(1) NOT NULL CHECK (Gender IN ('M', 'F')),
   -- no need for gender fluidity in animals :-)
@@ -2480,34 +2349,27 @@ SELECT NEWID() AS Implant_Chip_ID,
   -- Non breeds first
   D.Name,
   D.Gender,
-  '20001010' AS Birth_Date,
+  (cast(2000+abs(random() % 8) as text) || '-' || cast(1+abs(random() % 11) as text) || '-' || cast(1+abs(random() % 27) as text)) AS Birth_Date,
   -- Place holder, will update later based on generated admission date
   C.Color,
   CP.Pattern,
-  '20001010' AS Admission_Date
+  (cast(2009+abs(random() % 12) as text) || '-' || cast(1+abs(random() % 11) as text) || '-' || cast(1+abs(random() % 27) as text)) AS Admission_Date
 FROM DeDuped_F_M_Names AS D
   CROSS APPLY (
   SELECT Color
   FROM Colors AS C
-  ORDER BY NEWID(),
-  D.Name OFFSET 0 ROWS FETCH NEXT 1 ROW ONLY
   ) AS C
   CROSS APPLY (
   SELECT Pattern
   FROM Patterns AS P
   WHERE P.Species = D.Species
-  ORDER BY NEWID(),
-  C.Color OFFSET 0 ROWS FETCH NEXT 1 ROW ONLY
   ) AS CP
   CROSS APPLY (
   SELECT Breed
   FROM Breeds AS B
   WHERE B.Species = D.Species
-  ORDER BY NEWID(),
-  C.Color OFFSET 0 ROWS FETCH NEXT 1 ROW ONLY
   ) AS B(Breed)
 WHERE D.Species = 'Dog'
-ORDER BY NEWID() OFFSET 0 ROWS FETCH NEXT (50) ROWS ONLY 
 ;
 
 
@@ -2707,28 +2569,6 @@ FROM Animals AS A
   ORDER BY NEWID() OFFSET 0 ROWS FETCH NEXT 1 ROW ONLY
   ) AS Adopter
 ORDER BY NEWID() OFFSET 0 ROWS FETCH NEXT 50 ROWS ONLY 
-;
-
-
-
-
-
--- Future optional
--- Animal routine checkups
-CREATE TABLE Routine_Checkups (
-  Name VARCHAR(20) NOT NULL,
-  Species VARCHAR(10) NOT NULL,
-  CONSTRAINT FK_Routine_Checkups__Animals FOREIGN KEY (Name, Species) REFERENCES Animals (Name, Species),
-  Checkup_Time DATETIME2 NOT NULL,
-  Temperature_F DECIMAL(4, 1) NOT NULL,
-  Heart_Rate TINYINT NOT NULL,
-  Respiration TINYINT NOT NULL,
-  Weight_Lbs DECIMAL(4, 1) NOT NULL,
-  Comments VARCHAR(500) NULL,
-  Performed_By VARCHAR(100) NOT NULL REFERENCES Staff (Email) ON UPDATE CASCADE ON DELETE NO ACTION,
-  PRIMARY KEY (Name, Species, Checkup_Time),
-  INDEX NCIDX_FK_Routine_Checkups__Staff(Performed_By)
-) 
 ;
 
 
