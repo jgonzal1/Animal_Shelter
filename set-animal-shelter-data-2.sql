@@ -1,42 +1,5 @@
-CREATE TABLE Animals (
-  Name VARCHAR(20) NOT NULL,
-  Species VARCHAR(10) NOT NULL,
-  Primary_Color VARCHAR(10) NOT NULL,
-  Breed VARCHAR(50) NULL,
-  Gender CHAR(1) NOT NULL,
-  Birth_Date DATE NOT NULL,
-  Pattern VARCHAR(20) NOT NULL,
-  Admission_Date DATE NOT NULL
-);
-SELECT * FROM Animals;
-
-
-
-
-
+-- SQLite
 -- Dogs
-WITH Unpivoted_Names AS (
-  SELECT CAN.Species,
-  Genders.Gender,
-  CASE
-  WHEN Genders.Gender = 'F' THEN CAN.Female
-  ELSE CAN.Male
-  END AS Name
-  FROM Common_Animal_Names AS CAN
-  CROSS JOIN Genders
-),
-DeDuped_F_M_Names -- There are identical names for both M and F of the same species which we want to avoid since gender is not part of key
-AS (
-  SELECT UN.Species,
-  CASE
-  WHEN dbo.Random(1, 2) = 1 THEN MAX(Gender)
-  ELSE MIN(Gender) -- Pick arbitraty gender when duplicated
-  END AS Gender,
-  UN.Name
-  FROM Unpivoted_Names AS UN
-  GROUP BY UN.Species,
-  UN.Name
-)
 INSERT INTO Animals (
   Implant_Chip_ID,
   Species,
@@ -48,7 +11,7 @@ INSERT INTO Animals (
   Pattern,
   Admission_Date
   )
-SELECT NEWID() AS Implant_Chip_ID,
+SELECT (1000 + abs(random() % 8999)) AS Implant_Chip_ID,
   D.Species,
   B.Breed,
   -- Non breeds first
@@ -80,7 +43,7 @@ WHERE D.Species = 'Dog'
 
 
 
-
+/*
 -- Cats
 WITH Unpivoted_Names AS (
   SELECT CAN.Species,
@@ -516,3 +479,4 @@ GROUP BY Adopter_Email
 -- A.Species = RC.Species
 --GROUP BY A.Species 
 ;
+*/

@@ -2273,3 +2273,61 @@ SELECT S.Email,
   S.Hire_Date
 FROM Staff AS S
 ; SELECT * FROM Staff_Assignments;
+
+
+
+
+
+CREATE TABLE Unpivoted_Animal_Names(
+  Species VARCHAR(10) NOT NULL REFERENCES Species(Species),
+  Name VARCHAR(20) NOT NULL,
+  Gender CHAR(1) NOT NULL
+);
+INSERT INTO Unpivoted_Animal_Names(
+  Species, Name, Gender
+) SELECT Species,
+  (
+    CASE WHEN Genders.Gender = 'F'
+    THEN CAN.Female
+    ELSE CAN.Male END
+  ) AS Name,
+  Genders.Gender
+FROM Common_Animal_Names AS CAN
+CROSS JOIN Genders
+;
+
+
+
+
+
+-- There are identical names for both M and F
+-- of the same species which we want to avoid
+-- since gender is not part of key
+CREATE TABLE DeDuped_F_M_Names(
+  Species VARCHAR(10) NOT NULL REFERENCES Species(Species),
+  Gender CHAR(1) NOT NULL,
+  Name VARCHAR(20) NOT NULL
+);
+INSERT INTO DeDuped_F_M_Names(
+  Species, Gender, Name
+) SELECT UN.Species,
+    CASE WHEN abs(random() % 1)
+      THEN MAX(Gender)
+      ELSE MIN(Gender)
+    END AS Gender,
+    UN.Name
+  FROM Unpivoted_Animal_Names AS UN
+  GROUP BY UN.Species,
+  UN.Name
+;
+
+CREATE TABLE Animals (
+  Name VARCHAR(20) NOT NULL,
+  Species VARCHAR(10) NOT NULL,
+  Primary_Color VARCHAR(10) NOT NULL,
+  Breed VARCHAR(50) NULL,
+  Gender CHAR(1) NOT NULL,
+  Birth_Date DATE NOT NULL,
+  Pattern VARCHAR(20) NOT NULL,
+  Admission_Date DATE NOT NULL
+);
