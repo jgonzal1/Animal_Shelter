@@ -1,33 +1,4 @@
 -- SQLite
-
--- Adoptions
-INSERT INTO Adoptions (
-  Name,
-  Species,
-  Adopter_Email,
-  Adoption_Date,
-  Adoption_Fee
-  )
-SELECT A.Name,
-  A.Species,
-  Adopter.Email,
-  Adoption.Date,
-  50
-FROM Animals AS A
---WIP
-JOIN Calendar AS C
-  ON C.Date > A.Admission_Date
-  AND C.Date < '2024-01-01'
-CROSS APPLY (
-  SELECT Email
-  FROM Persons
-  WHERE Adoption.Date IS NOT NULL -- dummy reference to force row execution
-) AS Adopter;
-
-
-
-
-
 CREATE TABLE Vaccinations (
   Name VARCHAR(20) NOT NULL,
   Species VARCHAR(10) NOT NULL,
@@ -264,4 +235,3 @@ GROUP BY Adopter_Email
 -- A.Species = RC.Species
 --GROUP BY A.Species 
 ;
-*/

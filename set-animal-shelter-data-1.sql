@@ -134,7 +134,7 @@ CREATE TABLE Species_Vital_Signs_Ranges(
   Heart_Rate_high TINYINT NOT NULL,
   Respiratory_Rate_Low TINYINT NOT NULL,
   Respiratory_Rate_High TINYINT NOT NULL
-) 
+)
 ; INSERT INTO Species_Vital_Signs_Ranges(
   Species,
   Temperature_Low,
@@ -143,8 +143,7 @@ CREATE TABLE Species_Vital_Signs_Ranges(
   Heart_Rate_high,
   Respiratory_Rate_Low,
   Respiratory_Rate_High
-  )
-VALUES ('Dog', 99.5, 102.5, 60, 140, 10, 35),
+) VALUES ('Dog', 99.5, 102.5, 60, 140, 10, 35),
   ('Cat', 99.5, 102.5, 140, 220, 20, 30),
   ('Rabbit', 100.5, 103.5, 120, 150, 30, 60) 
 ;
@@ -156,7 +155,7 @@ VALUES ('Dog', 99.5, 102.5, 60, 140, 10, 35),
 CREATE TABLE Dog_Breeds_Urls(
   Breed VARCHAR(50) NOT NULL,
   URL VARCHAR(128) NULL
-) 
+)
 ; INSERT INTO Dog_Breeds_Urls(Breed, URL)
 VALUES (
   'ENGLISH POINTER',
@@ -2218,6 +2217,7 @@ FROM Common_Person_Names AS CPN
   CROSS JOIN Common_Person_Names AS CPN1
   CROSS JOIN Genders
 ;
+SELECT COUNT(*) FROM Persons;
 
 
 
@@ -2332,14 +2332,8 @@ CREATE TABLE Animals_Color_Ref (
 );
 -- Dogs
 INSERT INTO Animals_Color_Ref (
-  Implant_Chip_ID,
-  Species,
-  Breed,
-  Name,
-  Gender,
-  Birth_Date,
-  Color_Ref,
-  Pattern,
+  Implant_Chip_ID, Species, Breed, Name,
+  Gender, Birth_Date, Color_Ref, Pattern,
   Admission_Date
 )
 SELECT (1000 + abs(random() % 8999)) AS Implant_Chip_ID,
@@ -2360,15 +2354,8 @@ ON B.Species = D.Species
 WHERE D.Species = 'Dog'
 ;
 INSERT INTO Animals_Color_Ref (
-  Implant_Chip_ID,
-  Species,
-  Breed,
-  Name,
-  Gender,
-  Birth_Date,
-  Color_Ref,
-  Pattern,
-  Admission_Date
+  Implant_Chip_ID, Species, Breed, Name, Gender, Birth_Date,
+  Color_Ref, Pattern, Admission_Date
 )
 SELECT (1000 + abs(random() % 8999)) AS Implant_Chip_ID,
   D.Species,
@@ -2388,15 +2375,8 @@ ON B.Species = D.Species
 WHERE D.Species = 'Dog'
 ;
 INSERT INTO Animals_Color_Ref (
-  Implant_Chip_ID,
-  Species,
-  Breed,
-  Name,
-  Gender,
-  Birth_Date,
-  Color_Ref,
-  Pattern,
-  Admission_Date
+  Implant_Chip_ID, Species, Breed, Name, Gender,
+  Birth_Date, Color_Ref, Pattern, Admission_Date
 )
 SELECT (1000 + abs(random() % 8999)) AS Implant_Chip_ID,
   D.Species,
@@ -2416,15 +2396,8 @@ ON B.Species = D.Species
 WHERE D.Species = 'Cat'
 ;
 INSERT INTO Animals_Color_Ref (
-  Implant_Chip_ID,
-  Species,
-  Breed,
-  Name,
-  Gender,
-  Birth_Date,
-  Color_Ref,
-  Pattern,
-  Admission_Date
+  Implant_Chip_ID, Species, Breed, Name, Gender,
+  Birth_Date, Color_Ref, Pattern, Admission_Date
 )
 SELECT (1000 + abs(random() % 8999)) AS Implant_Chip_ID,
   D.Species,
@@ -2534,7 +2507,6 @@ CREATE TABLE Calendar(
   Weekday TINYINT NOT NULL,
   Year_Week TINYINT NOT NULL
 );
--- Populate Calendar with dates between "2020-01-01" and "2024-01-01"
 INSERT INTO Calendar(
     Date,
     Year,
@@ -2552,11 +2524,61 @@ FROM Integers
 WHERE Number <= 10650 -- until 2024-02-19
 ;
 SELECT * FROM Calendar WHERE Year = 2024;
-CREATE TABLE Adoptions (
+
+
+
+
+
+CREATE TABLE Adopter_Rands(
+  Adopter_Email VARCHAR(100),
+  Adoption_Date DATE NOT NULL,
+  Adoption_Fee SMALLINT NOT NULL,
+  RandMatch INT
+); INSERT INTO Adopter_Rands(
+  Adopter_Email,
+  Adoption_Date,
+  Adoption_Fee,
+  RandMatch
+) SELECT Email,
+  strftime('%Y',DATE('2014-01-01', '+'||abs(random() % 3650)||' days')),
+  50+abs(random() % 50),
+  abs(random() % 50000)
+FROM Persons;
+SELECT COUNT(*) AS COUNT FROM Adopter_Rands; --20k
+
+CREATE TABLE Animal_Rands(
+  Name VARCHAR(20) NOT NULL,
+  Species VARCHAR(10) NOT NULL,
+  RandMatch INT
+); INSERT INTO Animal_Rands(
+  Name,
+  Species,
+  RandMatch
+) SELECT Name,
+  Species,
+  abs(random() % 50000)
+FROM Animals;
+SELECT COUNT(*) AS COUNT FROM Animal_Rands; --684k
+
+CREATE TABLE Adoptions(
   Name VARCHAR(20) NOT NULL,
   Species VARCHAR(10) NOT NULL,
   Adopter_Email VARCHAR(100) NOT NULL,
   -- An animal may be adopted only once by the same person (allows for future implementation of adoption returns)
   Adoption_Date DATE NOT NULL,
   Adoption_Fee SMALLINT NOT NULL
-);
+); INSERT INTO Adoptions (
+  Name,
+  Species,
+  Adopter_Email,
+  Adoption_Date,
+  Adoption_Fee
+) SELECT AnR.Name,
+  AnR.Species,
+  AdR.Adopter_Email,
+  AdR.Adoption_Date,
+  AdR.Adoption_Fee
+FROM Adopter_Rands AS AdR
+LEFT JOIN Animal_Rands AS AnR
+  ON AnR.RandMatch = AdR.RandMatch
+; SELECT count(*) AS count FROM Adoptions;
