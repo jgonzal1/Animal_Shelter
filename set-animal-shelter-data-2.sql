@@ -1,172 +1,7 @@
 -- SQLite
-/*
--- Cats
-WITH Unpivoted_Names AS (
-  SELECT CAN.Species,
-  Genders.Gender,
-  CASE
-  WHEN Genders.Gender = 'F' THEN CAN.Female
-  ELSE CAN.Male
-  END AS Name
-  FROM Common_Animal_Names AS CAN
-  CROSS JOIN Genders
-),
-DeDuped_F_M_Names -- There are identical names for both M and F of the same species-avoid since we don't have gender in key
-AS (
-  SELECT UN.Species,
-  CASE
-  WHEN dbo.Random(1, 2) = 1 THEN MAX(Gender)
-  ELSE MIN(Gender) -- Pick arbitraty gender when duplicated
-  END AS Gender,
-  UN.Name
-  FROM Unpivoted_Names AS UN
-  GROUP BY UN.Species,
-  UN.Name
-)
-INSERT INTO Animals (
-  Implant_Chip_ID,
-  Species,
-  Breed,
-  Name,
-  Gender,
-  Birth_Date,
-  Primary_Color,
-  Pattern,
-  Admission_Date
-  )
-SELECT NEWID() AS Implant_Chip_ID,
-  D.Species,
-  B.Breed,
-  -- Non breeds first
-  D.Name,
-  D.Gender,
-  '20001010' AS Birth_Date,
-  -- Place holder, will update later based on generated admission date
-  CASE
-  WHEN B.Breed LIKE '%Blue%' THEN 'Gray'
-  ELSE C.Color
-  END,
-  CP.Pattern,
-  '20001010' AS Admission_Date
-FROM DeDuped_F_M_Names AS D
-  CROSS APPLY (
-  SELECT Color
-  FROM Colors AS C
-  ORDER BY NEWID(),
-  D.Name OFFSET 0 ROWS FETCH NEXT 1 ROW ONLY
-  ) AS C
-  CROSS APPLY (
-  SELECT Pattern
-  FROM Patterns AS P
-  WHERE P.Species = D.Species
-  ORDER BY NEWID(),
-  C.Color,
-  D.Name OFFSET 0 ROWS FETCH NEXT 1 ROW ONLY
-  ) AS CP
-  CROSS APPLY (
-  SELECT Breed
-  FROM Breeds AS B
-  WHERE B.Species = D.Species
-  ORDER BY NEWID(),
-  C.Color,
-  D.Name,
-  CP.Pattern OFFSET 0 ROWS FETCH NEXT 1 ROW ONLY
-  ) AS B(Breed)
-WHERE D.Species = 'Cat'
-ORDER BY NEWID() OFFSET 0 ROWS FETCH NEXT (50) ROWS ONLY 
-;
-
-
-
-
-
--- Rabbits
-WITH Unpivoted_Names AS (
-  SELECT CAN.Species,
-  Genders.Gender,
-  CASE
-  WHEN Genders.Gender = 'F' THEN CAN.Female
-  ELSE CAN.Male
-  END AS Name
-  FROM Common_Animal_Names AS CAN
-  CROSS JOIN Genders
-),
-DeDuped_F_M_Names -- There are identical names for both M and F of the same species-avoid since we don't have gender in key
-AS (
-  SELECT UN.Species,
-  CASE
-  WHEN dbo.Random(1, 2) = 1 THEN MAX(Gender)
-  ELSE MIN(Gender) -- Pick arbitraty gender when duplicated
-  END AS Gender,
-  UN.Name
-  FROM Unpivoted_Names AS UN
-  GROUP BY UN.Species,
-  UN.Name
-)
-INSERT INTO Animals (
-  Implant_Chip_ID,
-  Species,
-  Breed,
-  Name,
-  Gender,
-  Birth_Date,
-  Primary_Color,
-  Pattern,
-  Admission_Date
-  )
-SELECT NEWID() AS Implant_Chip_ID,
-  D.Species,
-  B.Breed,
-  -- Non breeds first
-  D.Name,
-  D.Gender,
-  '20001010' AS Birth_Date,
-  -- Place holder, will update later based on generated admission date
-  C.Color,
-  CP.Pattern,
-  '20001010' AS Admission_Date
-FROM DeDuped_F_M_Names AS D
-  CROSS APPLY (
-  SELECT Color
-  FROM Colors AS C
-  ORDER BY NEWID(),
-  D.Name OFFSET 0 ROWS FETCH NEXT 1 ROW ONLY
-  ) AS C
-  CROSS APPLY (
-  SELECT Pattern
-  FROM Patterns AS P
-  WHERE P.Species = D.Species
-  ORDER BY NEWID(),
-  C.Color OFFSET 0 ROWS FETCH NEXT 1 ROW ONLY
-  ) AS CP
-  CROSS APPLY (
-  SELECT Breed
-  FROM Breeds AS B
-  WHERE B.Species = D.Species
-  ORDER BY NEWID(),
-  C.Color OFFSET 0 ROWS FETCH NEXT 1 ROW ONLY
-  ) AS B(Breed)
-WHERE D.Species = 'Rabbit'
-ORDER BY NEWID() OFFSET 0 ROWS FETCH NEXT (50) ROWS ONLY 
-;
-
-
-
-
 
 -- Adoptions
-CREATE TABLE Adoptions (
-  Name VARCHAR(20) NOT NULL,
-  Species VARCHAR(10) NOT NULL,
-  CONSTRAINT FK_Adoptions__Animals FOREIGN KEY (Name, Species) REFERENCES Animals (Name, Species) ON UPDATE CASCADE ON DELETE NO ACTION,
-  Adopter_Email VARCHAR(100) NOT NULL REFERENCES Persons (Email) ON UPDATE CASCADE ON DELETE NO ACTION,
-  PRIMARY KEY (Name, Species, Adopter_Email),
-  -- An animal may be adopted only once by the same person (allows for future implementation of adoption returns)
-  Adoption_Date DATE NOT NULL,
-  Adoption_Fee SMALLINT NOT NULL CHECK (Adoption_Fee >= 0),
-  INDEX NCIDX_FK_Adoptions__Persons (Adopter_Email),
-) 
-; INSERT INTO Adoptions (
+INSERT INTO Adoptions (
   Name,
   Species,
   Adopter_Email,
@@ -179,21 +14,15 @@ SELECT A.Name,
   Adoption.Date,
   50
 FROM Animals AS A
-  CROSS APPLY (
-  SELECT C.Date
-  FROM Calendar AS C
-  WHERE C.Date > A.Admission_Date
+--WIP
+JOIN Calendar AS C
+  ON C.Date > A.Admission_Date
   AND C.Date < '2024-01-01'
-  ORDER BY NEWID() OFFSET 0 ROWS FETCH NEXT 1 ROW ONLY
-  ) AS Adoption(Date)
-  CROSS APPLY (
+CROSS APPLY (
   SELECT Email
   FROM Persons
   WHERE Adoption.Date IS NOT NULL -- dummy reference to force row execution
-  ORDER BY NEWID() OFFSET 0 ROWS FETCH NEXT 1 ROW ONLY
-  ) AS Adopter
-ORDER BY NEWID() OFFSET 0 ROWS FETCH NEXT 50 ROWS ONLY 
-;
+) AS Adopter;
 
 
 

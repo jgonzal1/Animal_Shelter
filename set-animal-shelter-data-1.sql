@@ -2359,6 +2359,90 @@ LEFT JOIN Breeds AS B
 ON B.Species = D.Species
 WHERE D.Species = 'Dog'
 ;
+INSERT INTO Animals_Color_Ref (
+  Implant_Chip_ID,
+  Species,
+  Breed,
+  Name,
+  Gender,
+  Birth_Date,
+  Color_Ref,
+  Pattern,
+  Admission_Date
+)
+SELECT (1000 + abs(random() % 8999)) AS Implant_Chip_ID,
+  D.Species,
+  B.Breed,
+  -- Non breeds first
+  D.Name,
+  D.Gender,
+  (cast(2000+abs(random() % 8) as text) || '-' || cast(1+abs(random() % 11) as text) || '-' || cast(1+abs(random() % 27) as text)) AS Birth_Date,
+  (1+abs(random() % 14)) as Color_Ref,
+  P.Pattern,
+  (cast(2009+abs(random() % 12) as text) || '-' || cast(1+abs(random() % 11) as text) || '-' || cast(1+abs(random() % 27) as text)) AS Admission_Date
+FROM DeDuped_F_M_Names AS D
+LEFT JOIN Patterns AS P
+ON P.Species = D.Species
+LEFT JOIN Breeds AS B
+ON B.Species = D.Species
+WHERE D.Species = 'Dog'
+;
+INSERT INTO Animals_Color_Ref (
+  Implant_Chip_ID,
+  Species,
+  Breed,
+  Name,
+  Gender,
+  Birth_Date,
+  Color_Ref,
+  Pattern,
+  Admission_Date
+)
+SELECT (1000 + abs(random() % 8999)) AS Implant_Chip_ID,
+  D.Species,
+  B.Breed,
+  -- Non breeds first
+  D.Name,
+  D.Gender,
+  (cast(1995+abs(random() % 13) as text) || '-' || cast(1+abs(random() % 11) as text) || '-' || cast(1+abs(random() % 27) as text)) AS Birth_Date,
+  (1+abs(random() % 14)) as Color_Ref,
+  P.Pattern,
+  (cast(2009+abs(random() % 12) as text) || '-' || cast(1+abs(random() % 11) as text) || '-' || cast(1+abs(random() % 27) as text)) AS Admission_Date
+FROM DeDuped_F_M_Names AS D
+LEFT JOIN Patterns AS P
+ON P.Species = D.Species
+LEFT JOIN Breeds AS B
+ON B.Species = D.Species
+WHERE D.Species = 'Cat'
+;
+INSERT INTO Animals_Color_Ref (
+  Implant_Chip_ID,
+  Species,
+  Breed,
+  Name,
+  Gender,
+  Birth_Date,
+  Color_Ref,
+  Pattern,
+  Admission_Date
+)
+SELECT (1000 + abs(random() % 8999)) AS Implant_Chip_ID,
+  D.Species,
+  B.Breed,
+  -- Non breeds first
+  D.Name,
+  D.Gender,
+  (cast(2005+abs(random() % 3) as text) || '-' || cast(1+abs(random() % 11) as text) || '-' || cast(1+abs(random() % 27) as text)) AS Birth_Date,
+  (1+abs(random() % 14)) as Color_Ref,
+  P.Pattern,
+  (cast(2009+abs(random() % 12) as text) || '-' || cast(1+abs(random() % 11) as text) || '-' || cast(1+abs(random() % 27) as text)) AS Admission_Date
+FROM DeDuped_F_M_Names AS D
+LEFT JOIN Patterns AS P
+ON P.Species = D.Species
+LEFT JOIN Breeds AS B
+ON B.Species = D.Species
+WHERE D.Species = 'Rabbit'
+;
 
 DROP TABLE Animals;
 CREATE TABLE Animals (
@@ -2396,5 +2480,83 @@ FROM Animals_Color_Ref AS A
 LEFT JOIN Colors AS C
 ON A.Color_Ref = C.Idx
 ;
-SELECT * FROM Animals
+SELECT Species, COUNT(*) FROM Animals GROUP BY Species
 ;
+
+
+
+
+
+CREATE TABLE Integers(Number INT NOT NULL PRIMARY KEY);
+-- Populate with 65536 integers
+WITH Level0 AS (
+  SELECT 1 AS constant
+  UNION ALL
+  SELECT 1
+),
+Level1 AS (
+  SELECT 1 AS constant
+  FROM Level0 AS A
+    CROSS JOIN Level0 AS B
+),
+Level2 AS (
+  SELECT 1 AS constant
+  FROM Level1 AS A
+    CROSS JOIN Level1 AS B
+),
+Level3 AS (
+  SELECT 1 AS constant
+  FROM Level2 AS A
+    CROSS JOIN Level2 AS B
+),
+Level4 AS (
+  SELECT 1 AS constant
+  FROM Level3 AS A
+    CROSS JOIN Level3 AS B
+),
+Sequential_Integers AS (
+  SELECT ROW_NUMBER() OVER (
+      ORDER BY (
+          SELECT NULL
+        )
+    ) AS Number
+  FROM Level4
+)
+INSERT INTO Integers(Number)
+SELECT Sequential_Integers.Number
+FROM Sequential_Integers
+;
+CREATE TABLE Calendar(
+  Date DATE NOT NULL PRIMARY KEY,
+  Year SMALLINT NOT NULL,
+  Month TINYINT NOT NULL,
+  Day TINYINT NOT NULL,
+  Weekday TINYINT NOT NULL,
+  Year_Week TINYINT NOT NULL
+);
+-- Populate Calendar with dates between "2020-01-01" and "2024-01-01"
+INSERT INTO Calendar(
+    Date,
+    Year,
+    Month,
+    Day,
+    Weekday,
+    Year_Week
+) SELECT DATE('1995-01-01', '+'||Number||' days'),
+  strftime('%Y',DATE('1995-01-01', '+'||Number||' days')),
+  strftime('%m',DATE('1995-01-01', '+'||Number||' days')),
+  strftime('%d',DATE('1995-01-01', '+'||Number||' days')),
+  strftime('%w',DATE('1995-01-01', '+'||Number||' days')), -- Sunday = 0
+  strftime('%W',DATE('1995-01-01', '+'||Number||' days'))
+FROM Integers
+WHERE Number <= 10650 -- until 2024-02-19
+;
+SELECT * FROM Calendar WHERE Year = 2024;
+CREATE TABLE Adoptions (
+  Name VARCHAR(20) NOT NULL,
+  Species VARCHAR(10) NOT NULL,
+  Adopter_Email VARCHAR(100) NOT NULL,
+  -- An animal may be adopted only once by the same person (allows for future implementation of adoption returns)
+  Adoption_Date DATE NOT NULL,
+  Adoption_Fee SMALLINT NOT NULL
+);

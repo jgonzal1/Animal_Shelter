@@ -123,50 +123,6 @@ VALUES (1, 'Main'),
 
 
 
-CREATE TABLE Integers(Number INT NOT NULL PRIMARY KEY);
--- Populate with 65536 integers
-WITH Level0 AS (
-  SELECT 1 AS constant
-  UNION ALL
-  SELECT 1
-),
-Level1 AS (
-  SELECT 1 AS constant
-  FROM Level0 AS A
-    CROSS JOIN Level0 AS B
-),
-Level2 AS (
-  SELECT 1 AS constant
-  FROM Level1 AS A
-    CROSS JOIN Level1 AS B
-),
-Level3 AS (
-  SELECT 1 AS constant
-  FROM Level2 AS A
-    CROSS JOIN Level2 AS B
-),
-Level4 AS (
-  SELECT 1 AS constant
-  FROM Level3 AS A
-    CROSS JOIN Level3 AS B
-),
-Sequential_Integers AS (
-  SELECT ROW_NUMBER() OVER (
-      ORDER BY (
-          SELECT NULL
-        )
-    ) AS Number
-  FROM Level4
-)
-INSERT INTO Integers(Number)
-SELECT Sequential_Integers.Number
-FROM Sequential_Integers
-;
-
-
-
-
-
 -- Source: https://en.wikipedia.org/wiki/Federal_holidays_in_the_United_States
 CREATE TABLE Federal_Holidays_Fixed(
   Holiday VARCHAR(50) NOT NULL PRIMARY KEY,
@@ -211,56 +167,72 @@ VALUES (
 
 
 
+CREATE TABLE Integers(Number INT NOT NULL PRIMARY KEY);
+-- Populate with 65536 integers
+WITH Level0 AS (
+  SELECT 1 AS constant
+  UNION ALL
+  SELECT 1
+),
+Level1 AS (
+  SELECT 1 AS constant
+  FROM Level0 AS A
+    CROSS JOIN Level0 AS B
+),
+Level2 AS (
+  SELECT 1 AS constant
+  FROM Level1 AS A
+    CROSS JOIN Level1 AS B
+),
+Level3 AS (
+  SELECT 1 AS constant
+  FROM Level2 AS A
+    CROSS JOIN Level2 AS B
+),
+Level4 AS (
+  SELECT 1 AS constant
+  FROM Level3 AS A
+    CROSS JOIN Level3 AS B
+),
+Sequential_Integers AS (
+  SELECT ROW_NUMBER() OVER (
+      ORDER BY (
+          SELECT NULL
+        )
+    ) AS Number
+  FROM Level4
+)
+INSERT INTO Integers(Number)
+SELECT Sequential_Integers.Number
+FROM Sequential_Integers
+;
+DROP TABLE Calendar;
 CREATE TABLE Calendar(
   Date DATE NOT NULL PRIMARY KEY,
   Year SMALLINT NOT NULL,
   Month TINYINT NOT NULL,
-  Month_Name VARCHAR(10) NOT NULL,
   Day TINYINT NOT NULL,
-  Day_Name VARCHAR(10) NOT NULL,
-  Day_of_Year SMALLINT NOT NULL,
   Weekday TINYINT NOT NULL,
-  Year_Week TINYINT NOT NULL,
-  US_Federal_Holiday VARCHAR(50) NULL,
+  Year_Week TINYINT NOT NULL
 );
--- Populate Calendar with dates between @Min_Date_Calendar and @Max_Date_Calendar
-INSERT Calendar(
+-- Populate Calendar with dates between "2020-01-01" and "2024-01-01"
+INSERT INTO Calendar(
     Date,
     Year,
     Month,
-    Month_Name,
     Day,
-    Day_Name,
-    Day_of_Year,
     Weekday,
     Year_Week
-  )
-SELECT DATEADD(DAY, Number - 1, @Min_Date_Calendar),
-  YEAR(DATEADD(DAY, Number - 1, @Min_Date_Calendar)),
-  MONTH(DATEADD(DAY, Number - 1, @Min_Date_Calendar)),
-  DATENAME(
-    MONTH,
-    (DATEADD(DAY, Number - 1, @Min_Date_Calendar))
-  ),
-  DAY((DATEADD(DAY, Number - 1, @Min_Date_Calendar))),
-  DATENAME(
-    WEEKDAY,
-    (DATEADD(DAY, Number - 1, @Min_Date_Calendar))
-  ),
-  DATEPART(
-    DAYOFYEAR,
-    (DATEADD(DAY, Number - 1, @Min_Date_Calendar))
-  ),
-  DATEPART(
-    WEEKDAY,
-    (DATEADD(DAY, Number - 1, @Min_Date_Calendar))
-  ),
-  DATEPART(
-    WEEK,
-    (DATEADD(DAY, Number - 1, @Min_Date_Calendar))
-  )
+) SELECT DATE('1995-01-01', '+'||Number||' days'),
+  strftime('%Y',DATE('1995-01-01', '+'||Number||' days')),
+  strftime('%m',DATE('1995-01-01', '+'||Number||' days')),
+  strftime('%d',DATE('1995-01-01', '+'||Number||' days')),
+  strftime('%w',DATE('1995-01-01', '+'||Number||' days')), -- Sunday = 0
+  strftime('%W',DATE('1995-01-01', '+'||Number||' days'))
 FROM Integers
-WHERE Number <= 1 + DATEDIFF(DAY, @Min_Date_Calendar, @Max_Date_Calendar);
+WHERE Number <= 10650 -- until 2024-02-19
+;
+SELECT * FROM Calendar WHERE Year = 2024;
 -- Update fixed holidays
 WITH Calendar_Holidays AS (
   SELECT C.Date,
