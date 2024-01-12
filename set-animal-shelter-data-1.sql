@@ -2101,18 +2101,23 @@ VALUES ('Cat', 'Solid'),
 
 -- Vaccines
 -- Source https://www.vetmed.ucdavis.edu/hospital/animal-health-topics/vaccination-guidelines
-CREATE TABLE Vaccines(Vaccine VARCHAR(50) NOT NULL PRIMARY KEY) 
-; INSERT INTO Vaccines(Vaccine)
-VALUES ('Rabies'),
-  ('Parvovirus'),
-  ('Distemper Virus'),
-  ('Adenovirus'),
-  ('Herpesvirus'),
-  ('Calicivirus'),
-  ('Panleukopenia Virus'),
-  ('Leukemia Virus'),
-  ('Myxomatosis'),
-  ('Viral Haemorrhagic Disease') 
+DROP TABLE Vaccines;
+CREATE TABLE Vaccines(
+  Vaccine VARCHAR(50) NOT NULL PRIMARY KEY,
+  VaccineId TINYINT
+)
+; INSERT INTO Vaccines(VaccineId, Vaccine)
+VALUES
+  (10, 'Adenovirus'),
+  (9, 'Calicivirus'),
+  (8, 'Distemper Virus'),
+  (7, 'Herpesvirus'),
+  (6, 'Leukemia Virus'),
+  (5, 'Myxomatosis'),
+  (4, 'Panleukopenia Virus'),
+  (3, 'Parvovirus'),
+  (2, 'Rabies'),
+  (1, 'Viral Haemorrhagic Disease')
 ;
 CREATE TABLE Species_Vaccines(
   Species VARCHAR(10) NOT NULL REFERENCES Species(Species),
@@ -2582,3 +2587,33 @@ FROM Adopter_Rands AS AdR
 LEFT JOIN Animal_Rands AS AnR
   ON AnR.RandMatch = AdR.RandMatch
 ; SELECT count(*) AS count FROM Adoptions;
+
+
+
+
+
+DROP TABLE Vaccinations;
+CREATE TABLE Vaccinations(
+  Name VARCHAR(20) NOT NULL,
+  Species VARCHAR(10) NOT NULL,
+  Vaccination_Time DATETIME NOT NULL,
+  Vaccine VARCHAR(50) NOT NULL,
+  Email VARCHAR(100) NOT NULL
+)
+; INSERT INTO Vaccinations(
+  Name,
+  Species,
+  Vaccination_Time,
+  Vaccine,
+  Email
+) SELECT AnR.Name,
+  AnR.Species,
+  V.Vaccine,
+  AdR.Adoption_Date,
+  AdR.Adoption_Fee
+FROM Adopter_Rands AS AdR
+LEFT JOIN Animal_Rands AS AnR
+  ON AdR.RandMatch = AnR.RandMatch
+LEFT JOIN Vaccines AS V
+  ON (1+abs(AdR.RandMatch%10)) = V.VaccineId
+; SELECT count(*) AS count FROM Vaccinations;
